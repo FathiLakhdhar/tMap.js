@@ -1,0 +1,33 @@
+body {
+  background-color: #eee;
+  font-family: monospace;
+}
+
+/* Map */
+svg {
+  font-family: Abel,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size: 10px;
+}
+.episode > rect {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+path {
+  fill: none;
+}
+.episode, .node, .detail text, .all-episodes {
+  cursor: pointer;
+}
+.all-episodes {
+  fill: #aaa;
+}
+.detail a text:hover, text.all-episodes:hover {
+  text-decoration: underline;
+}
+#graph-info {
+  position: absolute;
+  width: 140px;
+  right: 0;
+  bottom: 0;
+  padding-bottom: 10px;
+}

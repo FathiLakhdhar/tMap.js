@@ -1,0 +1,217 @@
+{
+  "episodes": [
+    {
+      "type": "episode",
+      "name": "John Fife",
+      "description": "<a href=\"http://en.wikipedia.org/wiki/John_Fife\">Reverend John Fife</a> was instrumental in co-founding the <a href=\"http://en.wikipedia.org/wiki/Sanctuary_movement\">Sanctuary</a> movement. He is also active in humanitarian work along the US/Mexico border through <a />Humane Borders</a>.",
+      "episode": 1,
+      "date": "2012-05-05 23:50:11",
+      "slug": "episode-one-reverend-john-fife",
+      "links": [
+        "Class",
+        "Collapse",
+        "Community",
+        "Economy",
+        "Environment",
+        "Equality",
+        "Government",
+        "Race",
+        "Spirituality",
+        "Biocentric",
+        "Centralized",
+        "Collectivist",
+        "Dualist",
+        "Objectivist",
+        "Psychological Continuity"
+      ]
+    },
+    {
+      "type": "episode",
+      "name": "Max More",
+      "description": "<a href=\"http://en.wikipedia.org/wiki/Max_More\">Max More</a> is the CEO of the <a href=\"http://www.alcor.org/\">Alcor Life Extension Foundation</a> and founder of the magazine <a href=\"http://www.extropy.org/\"><em>Extropy</em></a>.  He also coined the term <a href=\"http://en.wikipedia.org/wiki/Transhumanism\">transhumanist</a>.",
+      "episode": 2,
+      "date": "2012-05-09 15:53:27",
+      "slug": "episode-two-dr-max-more",
+      "links": [
+        "Economy",
+        "Environment",
+        "Government",
+        "Law",
+        "Population",
+        "Sci/Tech",
+        "Spirituality",
+        "Anthropocentric",
+        "Extrinsic",
+        "Individualist",
+        "Localized",
+        "Objectivist",
+        "Physicalist",
+        "Psychological Continuity"
+      ]
+    },
+    {
+      "type": "episode",
+      "name": "Peter Warren",
+      "description": "Peter Warren works for <a href=\"http://www.nature.org/\">The Nature Conservancy</a> and has been closely involved in an unlikely conversation that brought together ranchers and environmentalists to <a href=\"http://www.malpaiborderlandsgroup.org\">manage over 75,000 acres of grassland in Arizona</a>.",
+      "episode": 3,
+      "date": "2012-05-14 01:10:12",
+      "slug": "episode-three-peter-warren",
+      "links": [
+        "Agriculture",
+        "Community",
+        "Economy",
+        "Environment",
+        "Government",
+        "Anthropocentric"
+      ]
+    },
+    {
+      "type": "episode",
+      "name": "Colin Camerer",
+      "description": "<a href=\"http://hss.caltech.edu/people/camerer/profile\">Colin Camerer</a> is one of the pioneers of <a href=\"http://www.scholarpedia.org/article/Neuroeconomics\">neuroeconomics</a>, a combination of neuroscience, psychology, and economic theory.",
+      "episode": 4,
+      "date": "2012-05-20 15:39:43",
+      "slug": "episode-four-dr-colin-camerer",
+      "links": [
+        "Community",
+        "Economy",
+        "Education",
+        "Environment",
+        "Equality",
+        "Happiness",
+        "Sci/Tech",
+        "Anthropocentric",
+        "Physicalist",
+        "Subjectivist"
+      ]
+    }
+  ],
+  "themes": [
+    {
+      "type": "theme",
+      "name": "Agriculture",
+      "description": "",
+      "slug": "agriculture-2"
+    },
+    {
+      "type": "theme",
+      "name": "Art",
+      "description": "",
+      "slug": "art-2"
+    },
+    {
+      "type": "theme",
+      "name": "Class",
+      "description": "",
+      "slug": "class-2"
+    },
+    {
+      "type": "theme",
+      "name": "Collapse",
+      "description": "",
+      "slug": "collapse-2"
+    },
+    {
+      "type": "theme",
+      "name": "Community",
+      "description": "",
+      "slug": "community-2"
+    },
+    {
+      "type": "theme",
+      "name": "Economy",
+      "description": "",
+      "slug": "economy-2"
+    },
+    {
+      "type": "theme",
+      "name": "Education",
+      "description": "",
+      "slug": "education-2"
+    },
+    {
+      "type": "theme",
+      "name": "Environment",
+      "description": "",
+      "slug": "environment-2"
+    },
+    {
+      "type": "theme",
+      "name": "Equality",
+      "description": "",
+      "slug": "equality-2"
+    },
+    {
+      "type": "theme",
+      "name": "Gender",
+      "description": "",
+      "slug": "gender"
+    },
+    {
+      "type": "theme",
+      "name": "Government",
+      "description": "",
+      "slug": "government-2"
+    },
+    {
+      "type": "theme",
+      "name": "Happiness",
+      "description": "",
+      "slug": "happiness-2"
+    },
+    {
+      "type": "theme",
+      "name": "Health",
+      "description": "",
+      "slug": "health"
+    },
+    {
+      "type": "theme",
+      "name": "Law",
+      "description": "",
+      "slug": "law-2"
+    },
+    {
+      "type": "theme",
+      "name": "Media",
+      "description": "",
+      "slug": "media-2"
+    },
+    {
+      "type": "theme",
+      "name": "Mythology",
+      "description": "",
+      "slug": "mythology"
+    },
+    {
+      "type": "theme",
+      "name": "Population",
+      "description": "",
+      "slug": "population-2"
+    },
+    {
+      "type": "theme",
+      "name": "Race",
+      "description": "",
+      "slug": "race-2"
+    },
+    {
+      "type": "theme",
+      "name": "Sci/Tech",
+      "description": "",
+      "slug": "scitech"
+    },
+    {
+      "type": "theme",
+      "name": "Spirituality",
+      "description": "",
+      "slug": "spirituality-2"
+    },
+    {
+      "type": "theme",
+      "name": "Time",
+      "description": "",
+      "slug": "time-2"
+    }
+  ]
+}
