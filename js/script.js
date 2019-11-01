@@ -31,20 +31,32 @@
         return X[1]
     }).curve(d3.curveBasis);//.tension(0.5);
     var svg = d3.select("#graph").append("svg").attr("width", width).attr("height", height);
+    var bg = svg.append("rect")
+        .attr("class", "bg")
+        .attr("x", 0.5)
+        .attr("y", 0.5)
+        .attr("width", width - 1)
+        .attr("height", height - 1)
+        .attr("fill", "transparent")
+        .attr("stroke", "black");
+
     var d = svg.append("g").attr("transform", "translate(" + width / 4 + "," + height / 2 + ")");
-    var bg = d.append("rect").on("click", O);
-    bg.attr("class", "bg")
-    .attr("x", width/-4)
-    .attr("y", height/-2)
-    .attr("width", width)
-    .attr("height", height)
-    .attr("fill", "transparent")
-    .attr("stroke", "black");
+
+    let zoom = d3.zoom().on("zoom", () => handleZoom(d));
+    bg.call(zoom);
 
     var links = d.append("g").attr("class", "links")
       , episodes = d.append("g").attr("class", "episodes")
       , gNodes = d.append("g").attr("class", "nodes");
     var graphInfo = d3.select("#graph-info");
+
+
+    function handleZoom(svgGroup) {
+        svgGroup
+          .attr("transform",
+          `translate(${d3.event.transform.x + width / 4}, ${d3.event.transform.y + height / 2})` + " " +
+          `scale(${d3.event.transform.k})`);
+    }
     
     d3.json("metadata.json").then(function(data) {
         dataMap = d3.map(data);
