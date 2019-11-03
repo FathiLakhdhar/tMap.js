@@ -12,9 +12,20 @@ svg {
   stroke: #fff;
   stroke-width: 1.5px;
 }
-path {
+path.link {
   fill: none;
 }
+
+path.dragLink {
+  stroke: #999;
+  stroke-opacity: .6;
+  stroke-width: 3px;
+}
+
+path.dragLink.hidden {
+  stroke-width: 0;
+}
+
 .episode, .node, .detail text, .all-episodes {
   cursor: pointer;
 }

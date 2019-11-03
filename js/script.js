@@ -13,6 +13,20 @@
       , w = 1000
       , F = "elastic"
       , N = "#0da4d3";
+
+
+    var consts = {
+        selectedClass: "selected",
+        connectClass: "connect-node"
+    }
+
+    var state = {
+        mouseDownNode: null, 
+        mouseDownLink: null, 
+        shiftNodeDrag: false,
+        justDragged: false,
+    }
+
     var dataMap, dataMapValues, nodes, childrenMap, edges, A, P;
     var L = {} // selected node
       , k = {};//  mouseover / mouseout
@@ -31,6 +45,24 @@
         return X[1]
     }).curve(d3.curveBasis);//.tension(0.5);
     var svg = d3.select("#graph").append("svg").attr("width", width).attr("height", height);
+    svg.on("keydown", onKeyDown)
+        .on("keyup", onKeyUp);
+
+    var defs = svg.append("svg:defs");
+
+    //arrowhead
+     defs.append("svg:marker").attr("id", "arrowhead").attr("viewBox", "-0 -5 10 10")
+    .attr("refX", 5).attr("refY", 0).attr("markerWidth", 5).attr("markerHeight", 5)
+    .attr("orient", "auto").append("path").attr("d", "M 0, -5 L 10 ,0 L 0,5")
+    .style("fill", "#999")
+    .style("stroke", "none");
+    //hover arrowhead
+    defs.append("svg:marker").attr("id", "hover-arrowhead").attr("viewBox", "-0 -5 10 10")
+    .attr("refX", 5).attr("refY", 0).attr("markerWidth", 5).attr("markerHeight", 5)
+    .attr("orient", "auto").append("path").attr("d", "M 0, -5 L 10 ,0 L 0,5")
+    .style("fill", N)
+    .style("stroke", "none");
+
     var bg = svg.append("rect")
         .attr("class", "bg")
         .attr("x", 0.5)
@@ -40,16 +72,26 @@
         .attr("fill", "transparent")
         .attr("stroke", "black");
 
-    var d = svg.append("g").attr("transform", "translate(" + width / 4 + "," + height / 2 + ")");
+    var svgG = svg.append("g").attr("transform", "translate(" + width / 4 + "," + height / 2 + ")");
 
-    let zoom = d3.zoom().on("zoom", () => handleZoom(d));
+    let zoom = d3.zoom().on("zoom", () => handleZoom(svgG));
     bg.call(zoom);
 
-    var links = d.append("g").attr("class", "links")
-      , episodes = d.append("g").attr("class", "episodes")
-      , gNodes = d.append("g").attr("class", "nodes");
+    /*let zoomListner = d3.zoom().scaleExtent([0.1, 3]).
+        on("start", function() {d3.select("body").style("cursor", "move");})
+        .on("zoom",() => handleZoom(svgG))
+        .on("end", function() {d3.select("body").style("cursor", "auto");});*/
+
+    //svg.call(zoomListner);
+
+    var links = svgG.append("g").attr("class", "links")
+      , episodes = svgG.append("g").attr("class", "episodes")
+      , gNodes = svgG.append("g").attr("class", "nodes");
     var graphInfo = d3.select("#graph-info");
 
+    var dragLink = svgG.append("path")
+                    .attr("class", "dragLink hidden")
+                    .attr("d", "M0,0L0,0");
 
     function handleZoom(svgGroup) {
         svgGroup
@@ -75,29 +117,14 @@
             }
         });
 
-        childrenMap = d3.map();
-        dataMap.get("episodes").forEach(function(o) {
-            o.links = o.links.filter(function(k) {
-                return typeof nodes[gkey(k)] !== "undefined" && k.indexOf("r-") !== 0
-            });
-            childrenMap.set(o.key, o.links.map(function(k) {
-                var key = gkey(k);
-                if (typeof childrenMap.get(key) === "undefined") {
-                    childrenMap.set(key, [])
-                }
-                childrenMap.get(key).push(o);
-                return nodes[key];
-            }))
-        });
+        updateMapChildren();
         
         O();
         updateGraph();
     });
 
     function O() {
-        if (L.node === null) {
-            return
-        }
+
         L = {
             node: null,
             map: {}
@@ -140,72 +167,11 @@
                 })
             })
         });
-        updateGraph()
+        updateGraph();
     }
-    function clickNode(Y, X) {
-        if (L.node === Y && X !== true) {
-            if (Y.type === "episode") {
-                window.location.href = "/" + Y.slug;
-                return
-            }
-            L.node.children.forEach(function(aa) {
-                aa.children = aa._group
-            });
-            updateTree();
-            return
-        }
-        if (Y.isGroup) {
-            L.node.children.forEach(function(aa) {
-                aa.children = aa._group
-            });
-            Y.parent.children = Y.parent._children;
-            updateTree();
-            return
-        }
-        Y = nodes[Y.canonicalKey];
-        dataMapValues.forEach(function(aa) {
-            aa.parent = null;
-            aa.children = [];
-            aa._children = [];
-            aa._group = [];
-            aa.canonicalKey = aa.key;
-            aa.xOffset = 0
-        });
-        L.node = Y;
-        L.node.children = childrenMap.get(Y.canonicalKey);
-        L.map = {};
-        var Z = 0;
-        L.node.children.forEach(function(ac) {
-            L.map[ac.key] = true;
-            ac._children = childrenMap.get(ac.key).filter(function(ad) {
-                return ad.canonicalKey !== Y.canonicalKey
-            });
-            ac._children = JSON.parse(JSON.stringify(ac._children));
-            ac._children.forEach(function(ad) {
-                ad.canonicalKey = ad.key;
-                ad.key = ac.key + "-" + ad.key;
-                L.map[ad.key] = true
-            });
-            var aa = ac.key + "-group"
-              , ab = ac._children.length;
-            ac._group = [{
-                isGroup: true,
-                key: aa + "-group-key",
-                canonicalKey: aa,
-                name: ab,
-                count: ab,
-                xOffset: 0
-            }];
-            L.map[aa] = true;
-            Z += ab
-        });
-        L.node.children.forEach(function(aa) {
-            aa.children = Z > 50 ? aa._group : aa._children
-        });
-        //window.location.hash = L.node.key;
-        updateTree()
-    }
+
     function mouseoutNode() {
+        
         k = {
             node: null,
             map: {}
@@ -213,6 +179,17 @@
         z()
     }
     function mouseoverNode(X) {
+
+        //dragLink
+        if (X.type == 'theme' && state.shiftNodeDrag) {
+            state.target = {
+                d3Node: d3.select(this),
+                node: X
+            }
+            
+            d3.select(this).classed(consts.connectClass, true);
+        }
+
         if (k.node === X) {
             return
         }
@@ -239,12 +216,93 @@
         }
         z()
     }
+
+
+    function nodeMouseDown(d) {
+        d3Node = d3.select(this);
+        d3.event.stopPropagation();
+        state.mouseDownNode = d;
+        if (d3.event.shiftKey && d.type=="episode") {
+            state.shiftNodeDrag = d3.event.shiftKey;
+            dragLink.classed('hidden', false).attr('d', `M${d.x + U},${d.y + K / 2}L${d.x},${d.y}`);
+            return;
+        }
+    }
+
+
+    function nodeMouseUp(d3Node, d) {
+        state.shiftNodeDrag = false;
+        d3Node.classed(consts.connectClass, false);
+        if (!state.mouseDownNode) {return}
+        dragLink.classed("hidden", true);
+        if (state.mouseDownNode.key != d.key && state.mouseDownNode.type == "episode" && d.type == "theme") {// create new link
+            createNewLink(state.mouseDownNode, d);
+        }
+        state.target = null;
+        state.mouseDownNode = null;
+    }
+
+    function createNewLink(source, target) {
+        //TODO crete new link
+        dataMap.get("episodes").forEach(function(o, index) {
+            if (gkey(o.name) == source.key && !o.links.find(l=> l==target.name)) {
+                o.links.push(target.name)
+            }
+        });
+        console.log(`new Link : ${source.name} To ${target.name}`);
+        updateMapChildren();
+        O();
+    }
+
+    function dragMove(d) {
+        state.justDragged = true;
+        d3Node = this;
+        if (state.shiftNodeDrag) {//drag link 
+            dragLink.attr("d", `M${d.x + U},${d.y + K / 2}L${d3.mouse(svgG.node())[0]},${d3.mouse(svgG.node())[1]}`)
+        }else {
+            //drag Node
+        }
+    }
+
+    function onKeyDown() {
+        if (d3.event.keyCode == 16) {}//shift pressed
+    }
+
+    function onKeyUp() {
+        if (d3.event.keyCode == 16) {}//shift up
+        else if (d3.event.keyCode == 46) {//delete
+            var node = state.selectedNode;
+            if(node!=null) {
+                //TODO delete node
+            }
+        }
+    }
+
+
+    function updateMapChildren () {
+        childrenMap = d3.map();
+        dataMap.get("episodes").forEach(function(o) {
+            o.links = o.links.filter(function(k) {
+                return typeof nodes[gkey(k)] !== "undefined" && k.indexOf("r-") !== 0
+            });
+            childrenMap.set(o.key, o.links.map(function(k) {
+                var key = gkey(k);
+                if (typeof childrenMap.get(key) === "undefined") {
+                    childrenMap.set(key, [])
+                }
+                childrenMap.get(key).push(o);
+                return nodes[key];
+            }))
+        });
+    }
+
+
     function updateGraph() {
         updateLinks();
         links.selectAll("path").attr("d", function(X) {
             return v([[X.x1, X.y1], [X.x1, X.y1], [X.x1, X.y1]])
         }).transition().duration(w).attr("d", function(X) {
-            return v([[X.x1, X.y1], [X.target.xOffset * s, 0], [X.x2, X.y2]])
+            return v([[X.x1, X.y1], [X.target.xOffset * s, 0], [X.x2 - 2, X.y2]])//X.target.xOffset * s
         });
         updateEpisodes(dataMap.get("episodes"));
         updateEpisodes2(dataMap.get("themes")); //updateNodes(dataMap.get("themes"));
@@ -253,101 +311,11 @@
         mouseoutNode();
         z()
     }
-    function updateTree() {
-        var root = d3.hierarchy(L.node);
-        var X = treeLayout(root);
-        /*X.forEach(function(Z) {
-            if (Z.depth === 1) {
-                Z.y -= 20
-            }
-        });*/
-        //console.log(root.descendants());
-        edges = root.links();
-        edges.forEach(function(Z) {
-            Object.assign(Z.source, Z.source.data)
-            Object.assign(Z.target, Z.target.data)
-            if (Z.source.data.type === "episode") {
-                Z.key = Z.source.data.canonicalKey + "-to-" + Z.target.data.canonicalKey
-            } else {
-                Z.key = Z.target.data.canonicalKey + "-to-" + Z.source.data.canonicalKey
-            }
-            Z.canonicalKey = Z.key
-        });
-        updateLinks();
-        links.selectAll("path").transition().duration(w).attr("d", link);
-        updateEpisodes([]);
-        updateEpisodes2(X);//updateNodes(X);
-        updateDetail([L.node]);
-        var Y = "";
-        if (L.node.description) {
-            Y = L.node.description
-        }
-        graphInfo.html(Y);
-        mouseoutNode();
-        z()
-    }
-    function updateNodes(X) {
-        var X = gNodes.selectAll(".node").data(X, dataKey);
-        var Y = X.enter().append("g").attr("transform", function(aa) {
-            var Z = aa.parent ? aa.parent : {
-                xOffset: 0,
-                x: 0,
-                y: 0
-            };
-            return "translate(" + Z.xOffset + ",0)rotate(" + (Z.x - 90) + ")translate(" + Z.y + ")"
-        }).attr("class", "node").on("mouseover", mouseoverNode).on("mouseout", mouseoutNode).on("click", clickNode);
-        Y.append("circle").attr("r", 0);
-        Y.append("text").attr("stroke", "#fff").attr("stroke-width", 4).attr("class", "label-stroke");
-        Y.append("text").attr("font-size", 0).attr("class", "label");
-        X.transition().duration(w).attr("transform", function(Z) {
-            if (Z === L.node) {
-                return null
-            }
-            var aa = Z.isGroup ? Z.y + (7 + Z.count) : Z.y;
-            return "translate(" + Z.xOffset + ",0)rotate(" + (Z.x - 90) + ")translate(" + aa + ")"
-        });
-        X.selectAll("circle").transition().duration(w).attr("r", function(Z) {
-            if (Z == L.node) {
-                return 100
-            } else {
-                if (Z.isGroup) {
-                    return 7 + Z.count
-                } else {
-                    return 4.5
-                }
-            }
-        });
-        X.selectAll("text").transition().duration(w).attr("dy", ".3em").attr("font-size", function(Z) {
-            if (Z.depth === 0) {
-                return 20
-            } else {
-                return 15
-            }
-        }).text(function(Z) {
-            return Z.name
-        }).attr("text-anchor", function(Z) {
-            if (Z === L.node || Z.isGroup) {
-                return "middle"
-            }
-            return Z.x < 180 ? "start" : "end"
-        }).attr("transform", function(Z) {
-            if (Z === L.node) {
-                return null
-            } else {
-                if (Z.isGroup) {
-                    return Z.x > 180 ? "rotate(180)" : null
-                }
-            }
-            return Z.x < 180 ? "translate(" + t + ")" : "rotate(180)translate(-" + t + ")"
-        });
-        X.selectAll("text.label-stroke").attr("display", function(Z) {
-            return Z.depth === 1 ? "block" : "none"
-        });
-        X.exit().remove()
-    }
+
     function updateLinks() {
         var X = links.selectAll("path").data(edges, dataKey);
-        X.enter().append("path").attr("d", function(Z) {
+        X.enter().append("path")
+        .attr("d", function(Z) {
             var S = Z.source ? {
                 x: Z.source.x,
                 y: Z.source.y
@@ -363,7 +331,7 @@
         X.exit().remove()
     }
     function updateDetail(Z) {
-        var ac = d.selectAll(".detail").data(Z, dataKey);
+        var ac = svgG.selectAll(".detail").data(Z, dataKey);
         var Y = ac.enter().append("g").attr("class", "detail");
         var ab = Z[0];
         if (ab && ab.type === "episode") {
@@ -392,13 +360,30 @@
             }
         }
         ac.exit().remove();
-        var X = d.selectAll(".all-episodes").data(Z);
+        var X = svgG.selectAll(".all-episodes").data(Z);
         X.enter().append("text").attr("text-anchor", "start").attr("x", width / -2 + t).attr("y", height / 2 - t).text("all episodes").attr("class", "all-episodes").on("click", O);
         X.exit().remove()
     }
     function updateEpisodes(Y) {
         var Y = episodes.selectAll(".episode").data(Y, dataKey);
-        var X = Y.enter().append("g").attr("class", "episode").on("mouseover", mouseoverNode).on("mouseout", mouseoutNode).on("click", clickNode);
+        var X = Y.enter().append("g")
+                .attr("class", "episode")
+                .on("mousedown", nodeMouseDown)
+                .on("mouseover", mouseoverNode)
+                .on("mouseout", mouseoutNode)
+                .call(d3.drag()
+                    .on("start", function() {})
+                    .on("drag", dragMove)
+                    .on("end", function(d) {
+                        if (state.target) {
+                            nodeMouseUp(state.target.d3Node, state.target.node);
+                        }else if (state.shiftNodeDrag){
+                            state.shiftNodeDrag = false;
+                            dragLink.classed('hidden', true);
+                        }
+                    })
+                    );
+                //.on("click", clickNode);
         X.append("rect").attr("x", U / -2).attr("y", K / -2).attr("width", U).attr("height", K).transition().duration(w).attr("x", function(Z) {
             return Z.x
         }).attr("y", function(Z) {
@@ -430,7 +415,10 @@
 
     function updateEpisodes2(Y) {
         var Y = gNodes.selectAll(".node").data(Y, dataKey);
-        var X = Y.enter().append("g").attr("class", "node").on("mouseover", mouseoverNode).on("mouseout", mouseoutNode).on("click", clickNode);
+        var X = Y.enter().append("g").attr("class", "node")
+        .on("mouseover", mouseoverNode)
+        .on("mouseout", mouseoutNode);
+        //.on("click", clickNode);
         X.append("rect").attr("x", U / -2).attr("y", K / -2).attr("width", U).attr("height", K).transition().duration(w).attr("x", function(Z) {
             return Z.x
         }).attr("y", function(Z) {
@@ -464,7 +452,10 @@
         episodes.selectAll("rect").attr("fill", function(X) {
             return l(X, "#000", N, "#000")
         });
-        links.selectAll("path").attr("stroke", function(X) {
+        links.selectAll("path")
+        .attr("marker-end", function(X) {
+            return l(X, "url(#arrowhead)", "url(#hover-arrowhead)", "url(#arrowhead)")
+        }).attr("stroke", function(X) {
             return l(X, "#aaa", N, "#aaa")
         }).attr("stroke-width", function(X) {
             return l(X, "1.5px", "2.5px", "1px")
@@ -481,10 +472,6 @@
         gNodes.selectAll("rect").attr("fill", function(X) {
             return l(X, "#000", N, "#000")
         })
-        /*
-        gNodes.selectAll("text.label").attr("fill", function(X) {
-            return (X === L.node || X.isGroup) ? "#fff" : l(X, "#000", N, "#999")
-        })*/
     }
     function gkey(X) {
         return X.toLowerCase().replace(/[ .,()]/g, "-")
