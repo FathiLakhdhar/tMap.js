@@ -16,6 +16,14 @@ path.link {
   fill: none;
 }
 
+.node.connect-node > rect {
+  fill: #0da4d3;
+}
+
+.selected-node > rect {
+  fill: #0da4d3;
+}
+
 path.dragLink {
   stroke: #999;
   stroke-opacity: .6;
@@ -35,10 +43,36 @@ path.dragLink.hidden {
 .detail a text:hover, text.all-episodes:hover {
   text-decoration: underline;
 }
-#graph-info {
+
+#graph {
+  position: relative;
+  width: 800px;
+}
+
+#graph-actions {
+  background-color: blue;
   position: absolute;
-  width: 140px;
+  width: 100%;
   right: 0;
   bottom: 0;
-  padding-bottom: 10px;
+}
+
+
+.flex-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+}
+
+.flex-container > div {
+  flex: auto;
+  text-align: center;
+}
+
+.left-graph-actions {
+  background-color: #f44336;
+}
+.right-graph-actions {
+  background-color: #ffc107;
 }

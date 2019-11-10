@@ -4,7 +4,8 @@
 <head>
   <meta charset="utf-8">
   <title>tMap</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" type="text/css" href="css/ionicons.min.css">
+  <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 
 <body>
@@ -12,12 +13,49 @@
   <h2 style="color: crimson;">tMap</h2>
 
   <div id="main">
-    <div id="graph"></div>
-    <div id="graph-info"></div>
+    <div id="graph">
+      <div id="graph-actions">
+        <div class="flex-container">
+          <div class="left-graph-actions">
+            <button id="input-btn-add"><i class="ion-plus-round"></i></button>
+            <button id="input-btn-drop"><i class="ion-close-round"></i></button>
+            <button><i class="ion-arrow-up-c"></i></button>
+            <button><i class="ion-arrow-down-c"></i></button>
+          </div>
+          <div class="right-graph-actions">
+            <button id="output-btn-add"><i class="ion-plus-round"></i></button>
+            <button id="output-btn-drop"><i class="ion-close-round"></i></button>
+            <button><i class="ion-arrow-up-c"></i></button>
+            <button><i class="ion-arrow-down-c"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   
   <script src="js/d3.v5.min.js" charset="utf-8"></script>
   <script src="js/script.js" charset="utf-8"></script>
+  <script type="text/javascript">
+    /*Episodes*/
+    var iAddElem = document.getElementById("input-btn-add");
+    iAddElem.addEventListener("click", function () {
+      tMap.input.add();
+    }, false);
+    var iDropBtn = document.getElementById("input-btn-drop");
+    iDropBtn.addEventListener("click", function () {
+      tMap.input.remove();
+    }, false);
+
+    /*Themes*/
+    var oAddElem = document.getElementById("output-btn-add");
+    oAddElem.addEventListener("click", function () {
+      tMap.output.add();
+    }, false);
+    var oDropBtn = document.getElementById("output-btn-drop");
+    oDropBtn.addEventListener("click", function () {
+      tMap.output.remove();
+    }, false);
+  </script>
 </body>
 
 </html>

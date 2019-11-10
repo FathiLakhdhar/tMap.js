@@ -3,7 +3,6 @@
       , height = 600
       , h = height
       , U = 200
-      , U2 = 300
       , K = 16
       , S = 20
       , s = 8
@@ -17,7 +16,7 @@
 
 
     var consts = {
-        selectedClass: "selected-node",
+        selectedClass: "selected",
         connectClass: "connect-node"
     }
 
@@ -26,10 +25,9 @@
         mouseDownLink: null, 
         shiftNodeDrag: false,
         justDragged: false,
-        selectedNode: null
     }
 
-    var dataMap, dataMapValues, nodes, childrenMap, edges, P;
+    var dataMap, dataMapValues, nodes, childrenMap, edges, A, P;
     var L = {} // selected node
       , k = {};//  mouseover / mouseout
     var i, y, i2, y2;
@@ -50,53 +48,31 @@
     svg.on("keydown", onKeyDown)
         .on("keyup", onKeyUp);
 
-    var defs = svg.append("svg:defs");
-
-    //arrowhead
-     defs.append("svg:marker").attr("id", "arrowhead").attr("viewBox", "-0 -5 10 10")
-    .attr("refX", 5).attr("refY", 0).attr("markerWidth", 5).attr("markerHeight", 5)
-    .attr("orient", "auto").append("path").attr("d", "M 0, -5 L 10 ,0 L 0,5")
-    .style("fill", "#999")
-    .style("stroke", "none");
-    //hover arrowhead
-    defs.append("svg:marker").attr("id", "hover-arrowhead").attr("viewBox", "-0 -5 10 10")
-    .attr("refX", 5).attr("refY", 0).attr("markerWidth", 5).attr("markerHeight", 5)
-    .attr("orient", "auto").append("path").attr("d", "M 0, -5 L 10 ,0 L 0,5")
-    .style("fill", N)
-    .style("stroke", "none");
-
-    var bg = svg.append("rect")
+    /*var bg = svg.append("rect")
         .attr("class", "bg")
         .attr("x", 0.5)
         .attr("y", 0.5)
         .attr("width", width - 1)
         .attr("height", height - 1)
         .attr("fill", "transparent")
-        .attr("stroke", "black")
-        .on("click", function() {
-            state.selectedNode = null;
-            episodes.selectAll(".episode").classed(consts.selectedClass, false);
-            gNodes.selectAll(".node").classed(consts.selectedClass, false);
-        });
+        .attr("stroke", "black");*/
 
     var svgG = svg.append("g").attr("transform", "translate(" + width / 4 + "," + height / 2 + ")");
 
     let zoom = d3.zoom().on("zoom", () => handleZoom(svgG));
-    bg.call(zoom);
-
-    /*let zoomListner = d3.zoom().scaleExtent([0.1, 3]).
+    let zoomListner = d3.zoom().scaleExtent([0.1, 3]).
         on("start", function() {d3.select("body").style("cursor", "move");})
         .on("zoom",() => handleZoom(svgG))
-        .on("end", function() {d3.select("body").style("cursor", "auto");});*/
+        .on("end", function() {d3.select("body").style("cursor", "auto");});
 
-    //svg.call(zoomListner);
+    svg.call(zoomListner);
 
     var links = svgG.append("g").attr("class", "links")
       , episodes = svgG.append("g").attr("class", "episodes")
       , gNodes = svgG.append("g").attr("class", "nodes");
+    var graphInfo = d3.select("#graph-info");
 
     var dragLink = svgG.append("path")
-                    .attr("marker-end", "url(#arrowhead)")
                     .attr("class", "dragLink hidden")
                     .attr("d", "M0,0L0,0");
 
@@ -111,10 +87,17 @@
         dataMap = d3.map(data);
         dataMapValues = d3.merge(dataMap.values());
         nodes = {};
+        A = d3.map();
         dataMapValues.forEach(function(o) {
             o.key = gkey(o.name);
             o.canonicalKey = o.key;
             nodes[o.key] = o;
+            if (o.group) {
+                if (!A.has(o.group)) {
+                    A.set(o.group, [])
+                }
+                A.get(o.group).push(o)
+            }
         });
 
         updateMapChildren();
@@ -139,7 +122,7 @@
         i2 = 17;
         y2 = Math.floor(dataMap.get("themes").length * i2 / 2);
         dataMap.get("themes").forEach(function(t, index) {
-            t.x = U2 + U / -2;
+            t.x = 300 + U / -2;
             t.y = index * i2 - y2;
             t.xOffset = S;
             t.depth = 1
@@ -150,6 +133,9 @@
         dataMap.get("episodes").forEach(function(o) {
             o.links.forEach(function(l) {
                 node = nodes[gkey(l)];
+                if (!node || node.type === "reference") {
+                    return
+                }
                 Y = (node.x - 90) * Math.PI / 180;
                 aa = o.key + "-to-" + node.key;
                 edges.push({
@@ -166,9 +152,71 @@
         });
         updateGraph();
     }
-
+    /*function clickNode(Y, X) {
+        if (L.node === Y && X !== true) {
+            if (Y.type === "episode") {
+                window.location.href = "/" + Y.slug;
+                return
+            }
+            L.node.children.forEach(function(aa) {
+                aa.children = aa._group
+            });
+            updateTree();
+            return
+        }
+        if (Y.isGroup) {
+            L.node.children.forEach(function(aa) {
+                aa.children = aa._group
+            });
+            Y.parent.children = Y.parent._children;
+            updateTree();
+            return
+        }
+        Y = nodes[Y.canonicalKey];
+        dataMapValues.forEach(function(aa) {
+            aa.parent = null;
+            aa.children = [];
+            aa._children = [];
+            aa._group = [];
+            aa.canonicalKey = aa.key;
+            aa.xOffset = 0
+        });
+        L.node = Y;
+        L.node.children = childrenMap.get(Y.canonicalKey);
+        L.map = {};
+        var Z = 0;
+        L.node.children.forEach(function(ac) {
+            L.map[ac.key] = true;
+            ac._children = childrenMap.get(ac.key).filter(function(ad) {
+                return ad.canonicalKey !== Y.canonicalKey
+            });
+            ac._children = JSON.parse(JSON.stringify(ac._children));
+            ac._children.forEach(function(ad) {
+                ad.canonicalKey = ad.key;
+                ad.key = ac.key + "-" + ad.key;
+                L.map[ad.key] = true
+            });
+            var aa = ac.key + "-group"
+              , ab = ac._children.length;
+            ac._group = [{
+                isGroup: true,
+                key: aa + "-group-key",
+                canonicalKey: aa,
+                name: ab,
+                count: ab,
+                xOffset: 0
+            }];
+            L.map[aa] = true;
+            Z += ab
+        });
+        L.node.children.forEach(function(aa) {
+            aa.children = Z > 50 ? aa._group : aa._children
+        });
+        //window.location.hash = L.node.key;
+        updateTree()
+    }*/
     function mouseoutNode() {
-        //console.log("mouseoutNode")
+        
         k = {
             node: null,
             map: {}
@@ -176,10 +224,7 @@
         z()
     }
     function mouseoverNode(X) {
-        if (k.node === X) {
-            return
-        }
-        //console.log("mouseoverNode")
+
         //dragLink
         if (X.type == 'theme' && state.shiftNodeDrag) {
             state.target = {
@@ -190,6 +235,9 @@
             d3.select(this).classed(consts.connectClass, true);
         }
 
+        if (k.node === X) {
+            return
+        }
         k.node = X;
         k.map = {};
         k.map[X.key] = true;
@@ -211,24 +259,11 @@
             }
             
         }
-       
         z()
     }
 
 
-
-    function clickNode (d) {
-        //console.log("click")
-        d3Node = d3.select(this);
-        state.selectedNode = d;
-        episodes.selectAll(".episode").classed(consts.selectedClass, false);
-        gNodes.selectAll(".node").classed(consts.selectedClass, false);
-        d3Node.classed(consts.selectedClass, true);
-    }
-
-
     function nodeMouseDown(d) {
-        //console.log("nodeMouseDown")
         d3Node = d3.select(this);
         d3.event.stopPropagation();
         state.mouseDownNode = d;
@@ -241,7 +276,6 @@
 
 
     function nodeMouseUp(d3Node, d) {
-        //console.log("nodeMouseUp")
         state.shiftNodeDrag = false;
         d3Node.classed(consts.connectClass, false);
         if (!state.mouseDownNode) {return}
@@ -254,6 +288,7 @@
     }
 
     function createNewLink(source, target) {
+        //TODO crete new link
         dataMap.get("episodes").forEach(function(o, index) {
             if (gkey(o.name) == source.key && !o.links.find(l=> l==target.name)) {
                 o.links.push(target.name)
@@ -312,18 +347,107 @@
         links.selectAll("path").attr("d", function(X) {
             return v([[X.x1, X.y1], [X.x1, X.y1], [X.x1, X.y1]])
         }).transition().duration(w).attr("d", function(X) {
-            return v([[X.x1, X.y1], [X.target.xOffset * s, 0], [X.x2 - 2, X.y2]])//X.target.xOffset * s
+            return v([[X.x1, X.y1], [X.target.xOffset * s, 0], [X.x2, X.y2]])
         });
         updateEpisodes(dataMap.get("episodes"));
-        updateThemes(dataMap.get("themes")); //updateNodes(dataMap.get("themes"));
+        updateEpisodes2(dataMap.get("themes")); //updateNodes(dataMap.get("themes"));
+        updateDetail([]);
+        graphInfo.html('<a href="/the-concept-map/">What\'s this?</a>');
         mouseoutNode();
         z()
     }
 
+    /*
+    function updateTree() {
+        var root = d3.hierarchy(L.node);
+        var X = treeLayout(root);
+        edges = root.links();
+        edges.forEach(function(Z) {
+            Object.assign(Z.source, Z.source.data)
+            Object.assign(Z.target, Z.target.data)
+            if (Z.source.data.type === "episode") {
+                Z.key = Z.source.data.canonicalKey + "-to-" + Z.target.data.canonicalKey
+            } else {
+                Z.key = Z.target.data.canonicalKey + "-to-" + Z.source.data.canonicalKey
+            }
+            Z.canonicalKey = Z.key
+        });
+        updateLinks();
+        links.selectAll("path").transition().duration(w).attr("d", link);
+        updateEpisodes([]);
+        updateEpisodes2(X);//updateNodes(X);
+        updateDetail([L.node]);
+        var Y = "";
+        if (L.node.description) {
+            Y = L.node.description
+        }
+        graphInfo.html(Y);
+        mouseoutNode();
+        z()
+    }*/
+    
+    /*function updateNodes(X) {
+        var X = gNodes.selectAll(".node").data(X, dataKey);
+        var Y = X.enter().append("g").attr("transform", function(aa) {
+            var Z = aa.parent ? aa.parent : {
+                xOffset: 0,
+                x: 0,
+                y: 0
+            };
+            return "translate(" + Z.xOffset + ",0)rotate(" + (Z.x - 90) + ")translate(" + Z.y + ")"
+        }).attr("class", "node").on("mouseover", mouseoverNode).on("mouseout", mouseoutNode).on("click", clickNode);
+        Y.append("circle").attr("r", 0);
+        Y.append("text").attr("stroke", "#fff").attr("stroke-width", 4).attr("class", "label-stroke");
+        Y.append("text").attr("font-size", 0).attr("class", "label");
+        X.transition().duration(w).attr("transform", function(Z) {
+            if (Z === L.node) {
+                return null
+            }
+            var aa = Z.isGroup ? Z.y + (7 + Z.count) : Z.y;
+            return "translate(" + Z.xOffset + ",0)rotate(" + (Z.x - 90) + ")translate(" + aa + ")"
+        });
+        X.selectAll("circle").transition().duration(w).attr("r", function(Z) {
+            if (Z == L.node) {
+                return 100
+            } else {
+                if (Z.isGroup) {
+                    return 7 + Z.count
+                } else {
+                    return 4.5
+                }
+            }
+        });
+        X.selectAll("text").transition().duration(w).attr("dy", ".3em").attr("font-size", function(Z) {
+            if (Z.depth === 0) {
+                return 20
+            } else {
+                return 15
+            }
+        }).text(function(Z) {
+            return Z.name
+        }).attr("text-anchor", function(Z) {
+            if (Z === L.node || Z.isGroup) {
+                return "middle"
+            }
+            return Z.x < 180 ? "start" : "end"
+        }).attr("transform", function(Z) {
+            if (Z === L.node) {
+                return null
+            } else {
+                if (Z.isGroup) {
+                    return Z.x > 180 ? "rotate(180)" : null
+                }
+            }
+            return Z.x < 180 ? "translate(" + t + ")" : "rotate(180)translate(-" + t + ")"
+        });
+        X.selectAll("text.label-stroke").attr("display", function(Z) {
+            return Z.depth === 1 ? "block" : "none"
+        });
+        X.exit().remove()
+    }*/
     function updateLinks() {
         var X = links.selectAll("path").data(edges, dataKey);
-        X.enter().append("path")
-        .attr("d", function(Z) {
+        X.enter().append("path").attr("d", function(Z) {
             var S = Z.source ? {
                 x: Z.source.x,
                 y: Z.source.y
@@ -338,9 +462,42 @@
         }).attr("class", "link");
         X.exit().remove()
     }
-    
-    function updateEpisodes(data) {
-        var Y = episodes.selectAll(".episode").data(data, dataKey);
+    function updateDetail(Z) {
+        var ac = svgG.selectAll(".detail").data(Z, dataKey);
+        var Y = ac.enter().append("g").attr("class", "detail");
+        var ab = Z[0];
+        if (ab && ab.type === "episode") {
+            var aa = Y.append("a").attr("xlink:href", function(ae) {
+                return "/" + ae.slug
+            });
+            aa.append("text").attr("fill", N).attr("text-anchor", "middle").attr("y", (o + t) * -1).text(function(ae) {
+                return "EPISODE " + ae.episode
+            })
+        } else {
+            if (ab && ab.type === "theme") {
+                Y.append("text").attr("fill", "#aaa").attr("text-anchor", "middle").attr("y", (o + t) * -1).text("THEME")
+            } else {
+                if (ab && ab.type === "perspective") {
+                    var ad = ac.selectAll(".pair").data(A.get(ab.group).filter(function(ae) {
+                        return ae !== ab
+                    }), dataKey);
+                    ad.enter().append("text").attr("fill", "#aaa").attr("text-anchor", "middle").attr("y", function(af, ae) {
+                        return (o + t) * 2 + (ae * (o + t))
+                    }).text(function(ae) {
+                        return "(vs. " + ae.name + ")"
+                    }).attr("class", "pair").on("click", clickNode);
+                    Y.append("text").attr("fill", "#aaa").attr("text-anchor", "middle").attr("y", (o + t) * -1).text("PERSPECTIVE");
+                    ad.exit().remove()
+                }
+            }
+        }
+        ac.exit().remove();
+        var X = svgG.selectAll(".all-episodes").data(Z);
+        X.enter().append("text").attr("text-anchor", "start").attr("x", width / -2 + t).attr("y", height / 2 - t).text("all episodes").attr("class", "all-episodes").on("click", O);
+        X.exit().remove()
+    }
+    function updateEpisodes(Y) {
+        var Y = episodes.selectAll(".episode").data(Y, dataKey);
         var X = Y.enter().append("g")
                 .attr("class", "episode")
                 .on("mousedown", nodeMouseDown)
@@ -357,22 +514,24 @@
                             dragLink.classed('hidden', true);
                         }
                     })
-                    )
-                .on("click", clickNode);
-        X.append("rect")
-        .attr("x", U / -2)
-        .attr("y", K / -2)
-        .attr("width", U)
-        .attr("height", K);
-
+                    );
+                //.on("click", clickNode);
+        X.append("rect").attr("x", U / -2).attr("y", K / -2).attr("width", U).attr("height", K).transition().duration(w).attr("x", function(Z) {
+            return Z.x
+        }).attr("y", function(Z) {
+            return Z.y
+        });
         X.append("text").attr("x", function(Z) {
             return U / -2 + t
         }).attr("y", function(Z) {
             return K / -2 + o
         }).attr("fill", "#fff").text(function(Z) {
             return Z.name
+        }).transition().duration(w).attr("x", function(Z) {
+            return Z.x + t
+        }).attr("y", function(Z) {
+            return Z.y + 10
         });
-
         Y.exit().selectAll("rect").transition().duration(w).attr("x", function(Z) {
             return U / -2
         }).attr("y", function(Z) {
@@ -383,82 +542,49 @@
         }).attr("y", function(Z) {
             return K / -2 + o
         });
-        Y.exit().transition().duration(w).remove();
+        Y.exit().transition().duration(w).remove()
+    }
 
-
-        episodes.selectAll(".episode").select("rect")
-        .transition().duration(w).attr("x", function(Z) {
+    function updateEpisodes2(Y) {
+        var Y = gNodes.selectAll(".node").data(Y, dataKey);
+        var X = Y.enter().append("g").attr("class", "node")
+        .on("mouseover", mouseoverNode)
+        .on("mouseout", mouseoutNode);
+        //.on("click", clickNode);
+        X.append("rect").attr("x", U / -2).attr("y", K / -2).attr("width", U).attr("height", K).transition().duration(w).attr("x", function(Z) {
             return Z.x
         }).attr("y", function(Z) {
             return Z.y
         });
-
-        episodes.selectAll(".episode").select("text")
-        .transition().duration(w).attr("x", function(Z) {
-            return Z.x + t
-        }).attr("y", function(Z) {
-            return Z.y + 10
-        });
-    }
-
-    function updateThemes(data) {
-        var N = gNodes.selectAll(".node").data(data, dataKey);
-        var X = N.enter().append("g").attr("class", "node")
-        .on("mouseover", mouseoverNode)
-        .on("mouseout", function() {
-            d3.select(this).classed(consts.connectClass, false);
-            mouseoutNode();
-        })
-        .on("click", clickNode);
-        X.append("rect")
-        .attr("x", U2 + U / -2)
-        .attr("y", K / -2)
-        .attr("width", U)
-        .attr("height", K);
-        
         X.append("text").attr("x", function(Z) {
-            return U2 + U / -2 + t
+            return U / -2 + t
         }).attr("y", function(Z) {
             return K / -2 + o
         }).attr("fill", "#fff").text(function(Z) {
             return Z.name
-        });
-        N.exit().selectAll("rect").transition().duration(w).attr("x", function(Z) {
-            return U2 + U / -2
-        }).attr("y", function(Z) {
-            return K / -2
-        });
-        N.exit().selectAll("text").transition().duration(w).attr("x", function(Z) {
-            return U2 + U / -2 + t
-        }).attr("y", function(Z) {
-            return K / -2 + o
-        });
-        N.exit().transition().duration(w).remove()
-
-
-        gNodes.selectAll(".node").select("rect")
-        .transition().duration(w)
-        .attr("x", function(Z) {
-            return Z.x
-        }).attr("y", function(Z) {
-            return Z.y
-        });
-        gNodes.selectAll(".node").select("text").transition().duration(w)
-        .attr("x", function(Z) {
+        }).transition().duration(w).attr("x", function(Z) {
             return Z.x + t
         }).attr("y", function(Z) {
             return Z.y + 10
         });
+        Y.exit().selectAll("rect").transition().duration(w).attr("x", function(Z) {
+            return U / -2
+        }).attr("y", function(Z) {
+            return K / -2
+        });
+        Y.exit().selectAll("text").transition().duration(w).attr("x", function(Z) {
+            return U / -2 + t
+        }).attr("y", function(Z) {
+            return K / -2 + o
+        });
+        Y.exit().transition().duration(w).remove()
     }
 
     function z() {
         episodes.selectAll("rect").attr("fill", function(X) {
             return l(X, "#000", N, "#000")
         });
-        links.selectAll("path")
-        .attr("marker-end", function(X) {
-            return l(X, "url(#arrowhead)", "url(#hover-arrowhead)", "url(#arrowhead)")
-        }).attr("stroke", function(X) {
+        links.selectAll("path").attr("stroke", function(X) {
             return l(X, "#aaa", N, "#aaa")
         }).attr("stroke-width", function(X) {
             return l(X, "1.5px", "2.5px", "1px")
@@ -475,6 +601,10 @@
         gNodes.selectAll("rect").attr("fill", function(X) {
             return l(X, "#000", N, "#000")
         })
+        /*
+        gNodes.selectAll("text.label").attr("fill", function(X) {
+            return (X === L.node || X.isGroup) ? "#fff" : l(X, "#000", N, "#999")
+        })*/
     }
     function gkey(X) {
         return X.toLowerCase().replace(/[ .,()]/g, "-")
@@ -488,94 +618,5 @@
         }
         return k.map[X.key] ? Z : aa
     }
-
-
-
-    function removeNode (node) {
-        if (node) {
-            if (node.type == "theme") {
-                dataMap.set("themes", dataMap.get("themes").filter(function(t){
-                    return t.key != node.key;
-                }));
-            }else if (node.type == "episode") {
-                dataMap.set("episodes", dataMap.get("episodes").filter(function(ep){
-                    return ep.key != node.key;
-                }));
-            }
-            dataMapValues = d3.merge(dataMap.values());
-            nodes = {};
-            dataMapValues.forEach(function(o) {
-                o.key = gkey(o.name);
-                o.canonicalKey = o.key;
-                nodes[o.key] = o;
-            });
-            updateMapChildren();
-            O();
-        }
-    }
-
-    var newThemeCount = 0;
-    var newEpisodeCount = 0;
-
-    var Api = {
-        input: {
-            add: function () {
-                newEpisodeCount ++;
-
-                var newEpisode = {
-                  "type": "episode",
-                  "name": "Episode "+newEpisodeCount,
-                  "description": "",
-                  "episode": dataMap.get("episodes").length + 1,
-                  "date": "2012-05-05 23:50:11",
-                  "slug": "episode-one-reverend-episode-"+newEpisodeCount,
-                  "links": ["Class"]
-                }
-                dataMap.get("episodes").push(newEpisode);
-                dataMapValues = d3.merge(dataMap.values());
-                nodes = {};
-                dataMapValues.forEach(function(o) {
-                    o.key = gkey(o.name);
-                    o.canonicalKey = o.key;
-                    nodes[o.key] = o;
-                });
-                console.log(`new Episode`, newEpisode);
-                updateMapChildren();
-                O();
-            },
-            remove: function () {
-              removeNode(state.selectedNode);  
-            } 
-        },
-        output: {
-            add: function () {
-                newThemeCount ++;
-                var newTheme = {
-                  "type": "theme",
-                  "name": "Theme " + newThemeCount,
-                  "description": "",
-                  "slug": "theme-" + newThemeCount
-                }
-                dataMap.get("themes").push(newTheme);
-                dataMapValues = d3.merge(dataMap.values());
-                nodes = {};
-                dataMapValues.forEach(function(o) {
-                    o.key = gkey(o.name);
-                    o.canonicalKey = o.key;
-                    nodes[o.key] = o;
-                });
-                console.log(`new Theme`, newTheme);
-                updateMapChildren();
-                O();
-            },
-            remove: function () {
-              removeNode(state.selectedNode);  
-            } 
-        }
-    }
-
-
-    window["tMap"] = Object.assign({}, Api);
-
 }
 )();
